@@ -1,0 +1,110 @@
+The Dark Frontier Blender Cheat Sheet
+Version 1.0
+
+This will grow as we learn Blender. I only want to include shortcuts we'll actually use for The Dark Frontier.
+
+Navigation
+Shortcut	Action
+Middle Mouse	Rotate View
+Shift + Middle Mouse	Pan
+Mouse Wheel	Zoom
+Numpad .	Frame Selected
+Alt + Z	X-Ray Mode
+Selection
+Shortcut	Action
+A	Select All
+Alt + A	Deselect All
+B	Box Select
+C	Circle Select
+Modes
+Shortcut	Action
+Tab	Object / Edit Mode
+1	Vertex Select
+2	Edge Select
+3	Face Select
+Transform
+Shortcut	Action
+G	Move (Grab)
+G X	Move on X
+G Y	Move on Y
+G Z	Move on Z
+S	Scale
+S X	Scale X
+S Y	Scale Y
+S Z	Scale Z
+R	Rotate
+Modeling
+Shortcut	Action
+E	Extrude
+Ctrl + B	Bevel
+Ctrl + R	Loop Cut
+I	Inset Face
+K	Knife Tool
+Object Creation
+Shortcut	Action
+Shift + A	Add Object
+Shift + D	Duplicate
+X	Delete
+Apply
+Shortcut	Action
+Ctrl + A	Apply Menu
+Ctrl + A → Scale	Apply Scale
+Ctrl + A → Rotation	Apply Rotation
+Undo
+Shortcut	Action
+Ctrl + Z	Undo
+Ctrl + Shift + Z	Redo
+Helpful
+Shortcut	Action
+N	Toggle Item Panel
+F9	Adjust Last Operation
+Ctrl + S	Save
+Ctrl + Shift + S	Save As
+Blender Rules For The Dark Frontier
+Every Asset
+
+✅ Rename Collection
+
+✅ Rename Object
+
+✅ Rename Mesh
+
+✅ Correct Scale
+
+✅ Apply Scale
+
+✅ Correct Pivot
+
+✅ Save Often
+
+Modeling Rules
+Silhouette first.
+Readability over realism.
+Chunky proportions.
+Slight imperfections.
+Low Poly.
+Modular whenever possible.
+Our Current Library
+Asset	Status
+Beam_Long	✅ Complete
+Wood_Post	🟡 In Progress
+Blender Tricks We've Learned
+Right-click after Loop Cut
+
+Leaves the cut exactly where Blender previewed it.
+
+Mouse Wheel during Bevel
+
+Changes the number of segments.
+
+F9
+
+Brings back the settings for the last tool you used.
+
+Dimensions > Scale
+
+Always edit Dimensions when creating a new asset.
+
+Only use Scale temporarily.
+
+Then Apply Scale.
