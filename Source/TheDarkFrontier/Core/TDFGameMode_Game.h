@@ -14,7 +14,9 @@ class THEDARKFRONTIER_API ATDFGameMode_Game : public AGameModeBase
 {
 	GENERATED_BODY()
 	
-	
+protected:
+
+	virtual void BeginPlay() override;
 	
 	
 };
