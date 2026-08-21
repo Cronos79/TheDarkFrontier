@@ -7,8 +7,20 @@ public class TheDarkFrontier : ModuleRules
 	public TheDarkFrontier(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "MoviePlayer", "UMG", "SunPosition" });
+
+        PublicDependencyModuleNames.AddRange(new string[]
+            {
+                "Core",
+                "CoreUObject",
+                "Engine",
+                "InputCore",
+                "EnhancedInput",
+                "MoviePlayer",
+                "UMG",
+                "SunPosition",
+                "Landscape",
+                "GameplayTags"
+            });
 
         PrivateDependencyModuleNames.AddRange(new string[]
             {
@@ -17,9 +29,6 @@ public class TheDarkFrontier : ModuleRules
             });
 
         PublicIncludePaths.Add(ModuleDirectory);
-
-        // Uncomment if you are using Slate UI
-        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
         // Uncomment if you are using online features
         // PrivateDependencyModuleNames.Add("OnlineSubsystem");

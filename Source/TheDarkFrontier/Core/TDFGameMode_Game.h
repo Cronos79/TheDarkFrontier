@@ -6,17 +6,44 @@
 #include "GameFramework/GameModeBase.h"
 #include "TDFGameMode_Game.generated.h"
 
-/**
- * 
- */
+class ATDFCitizenManager;
+class UAllBuildingsDataAsset;
+class UAllResourcesDataAsset;
+class UProgressionTreeDataAsset;
+
 UCLASS()
-class THEDARKFRONTIER_API ATDFGameMode_Game : public AGameModeBase
+class THEDARKFRONTIER_API ATDFGameMode_Game :
+	public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
 protected:
 
 	virtual void BeginPlay() override;
-	
-	
+
+public:
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Citizens")
+	TSubclassOf<ATDFCitizenManager> CitizenManagerClass;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Buildings")
+	TObjectPtr<UAllBuildingsDataAsset> AllBuildings;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Resources")
+	TObjectPtr<UAllResourcesDataAsset> AllResources;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Progression")
+	TObjectPtr<UProgressionTreeDataAsset> SettlementProgression;
 };
