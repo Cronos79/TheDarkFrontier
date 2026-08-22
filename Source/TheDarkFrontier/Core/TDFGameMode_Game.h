@@ -8,9 +8,9 @@
 
 class ATDFCitizenManager;
 class UAllBuildingsDataAsset;
-class UAllResourcesDataAsset;
-class UProgressionTreeDataAsset;
 class UAllBuildingCategoriesDataAsset;
+class UAllProgressionDataAsset;
+class UAllResourcesDataAsset;
 
 UCLASS()
 class THEDARKFRONTIER_API ATDFGameMode_Game :
@@ -28,29 +28,34 @@ public:
 		EditDefaultsOnly,
 		BlueprintReadOnly,
 		Category = "Citizens")
-	TSubclassOf<ATDFCitizenManager> CitizenManagerClass;
+	TSubclassOf<ATDFCitizenManager>
+		CitizenManagerClass;
 
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,
 		Category = "Buildings")
-	TObjectPtr<UAllBuildingsDataAsset> AllBuildings;
+	TObjectPtr<UAllBuildingsDataAsset>
+		AllBuildings;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Buildings")
+	TObjectPtr<UAllBuildingCategoriesDataAsset>
+		AllBuildingCategories;
 
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,
 		Category = "Resources")
-	TObjectPtr<UAllResourcesDataAsset> AllResources;
+	TObjectPtr<UAllResourcesDataAsset>
+		AllResources;
 
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,
 		Category = "Progression")
-	TObjectPtr<UProgressionTreeDataAsset> SettlementProgression;
-
-	UPROPERTY(
-		EditDefaultsOnly,
-		BlueprintReadOnly,
-		Category = "Buildings")
-	TObjectPtr<UAllBuildingCategoriesDataAsset> AllBuildingCategories;
+	TObjectPtr<UAllProgressionDataAsset>
+		AllProgression;
 };

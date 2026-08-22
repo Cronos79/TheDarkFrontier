@@ -3,7 +3,7 @@
 #include "TDFGameMode_Game.h"
 
 #include "Citizens/Systems/TDFCitizenManager.h"
-#include "Progression/Data/ProgressionTreeDataAsset.h"
+#include "Progression/Data/AllProgressionDataAsset.h"
 #include "Settlements/Data/SettlementDataObject.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
@@ -74,10 +74,10 @@ void ATDFGameMode_Game::BeginPlay()
 			continue;
 		}
 
-		if (SettlementProgression)
+		if (AllProgression)
 		{
 			Settlement->InitializeProgression(
-				SettlementProgression);
+				AllProgression);
 		}
 
 		if (!CitizenManagerClass)
