@@ -50,6 +50,12 @@ void ATDFGameMode_Game::BeginPlay()
 			AllBuildings);
 	}
 
+	if (AllBuildingCategories)
+	{
+		WorldSubsystem->SetAllBuildingCategories(
+			AllBuildingCategories);
+	}
+
 	if (AllResources)
 	{
 		WorldSubsystem->SetAllResources(
