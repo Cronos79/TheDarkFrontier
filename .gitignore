@@ -12,3 +12,9 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+
+# Large source-art working files
+Art/Photoshop/Landscape/TDFLandscape.psd
+
+# Third-party demo map built data
+Content/Polytope_Studio/Nature_Free/Maps/Free_Nature_Display_BuiltData.uasset
