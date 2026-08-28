@@ -19,7 +19,8 @@ public class TheDarkFrontier : ModuleRules
                 "UMG",
                 "SunPosition",
                 "Landscape",
-                "GameplayTags"
+                "GameplayTags",
+                "Foliage"
             });
 
         PrivateDependencyModuleNames.AddRange(new string[]

@@ -11,6 +11,7 @@ class UAllBuildingsDataAsset;
 class UAllBuildingCategoriesDataAsset;
 class UAllProgressionDataAsset;
 class UAllResourcesDataAsset;
+class UAllFoliageResourcesDataAsset;
 
 UCLASS()
 class THEDARKFRONTIER_API ATDFGameMode_Game :
@@ -51,6 +52,13 @@ public:
 		Category = "Resources")
 	TObjectPtr<UAllResourcesDataAsset>
 		AllResources;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Resources")
+	TObjectPtr<UAllFoliageResourcesDataAsset>
+		AllFoliageResources;
 
 	UPROPERTY(
 		EditDefaultsOnly,

@@ -7,6 +7,7 @@
 #include "Settlements/Data/SettlementDataObject.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
+#include "Resources/Data/AllFoliageResourcesDataAsset.h"
 
 void ATDFGameMode_Game::BeginPlay()
 {
@@ -60,6 +61,12 @@ void ATDFGameMode_Game::BeginPlay()
 	{
 		WorldSubsystem->SetAllResources(
 			AllResources);
+	}
+
+	if (AllFoliageResources)
+	{
+		WorldSubsystem->SetAllFoliageResources(
+			AllFoliageResources);
 	}
 
 	//-------------------------------------------------------------------------
