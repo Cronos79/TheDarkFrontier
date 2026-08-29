@@ -101,7 +101,7 @@ void ATDFGameMode_Game::BeginPlay()
 			continue;
 		}
 
-		CitizenManager->InitializeSettlement(
+		CitizenManager->InitializeNewSettlement(
 			Settlement);
 	}
 }
