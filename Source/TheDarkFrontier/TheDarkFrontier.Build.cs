@@ -20,7 +20,8 @@ public class TheDarkFrontier : ModuleRules
                 "SunPosition",
                 "Landscape",
                 "GameplayTags",
-                "Foliage"
+                "Foliage",
+                "NavigationSystem"
             });
 
         PrivateDependencyModuleNames.AddRange(new string[]
