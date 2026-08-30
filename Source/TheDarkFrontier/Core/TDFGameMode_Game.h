@@ -29,6 +29,10 @@ protected:
 
 public:
 
+	void RestoreSettlementWorkplaces(
+		USettlementDataObject* Settlement,
+		const UTDFSaveGame* SaveGame);
+
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,

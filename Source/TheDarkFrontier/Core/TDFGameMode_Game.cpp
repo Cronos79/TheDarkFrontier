@@ -15,6 +15,8 @@
 #include "Settlements/Data/SettlementDataObject.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
+#include "Jobs/Systems/TDFWorkplaceManager.h"
+#include "Resources/Inventory/TDFInventory.h"
 
 void ATDFGameMode_Game::BeginPlay()
 {
@@ -124,6 +126,10 @@ void ATDFGameMode_Game::BeginPlay()
 					Settlement,
 					PendingSave,
 					PlacementManager);
+
+			RestoreSettlementWorkplaces(
+				Settlement,
+				PendingSave);
 		}
 
 		//-------------------------------------------------------------------------
@@ -177,6 +183,140 @@ ATDFGameMode_Game::FindPlacementManager() const
 		UGameplayStatics::GetActorOfClass(
 			GetWorld(),
 			ATDFPlacementManager::StaticClass()));
+}
+
+void ATDFGameMode_Game::RestoreSettlementWorkplaces(
+	USettlementDataObject* Settlement,
+	const UTDFSaveGame* SaveGame)
+{
+	if (!Settlement ||
+		!SaveGame)
+	{
+		return;
+	}
+
+	//-------------------------------------------------------------------------
+	// Find Saved Settlement
+	//-------------------------------------------------------------------------
+
+	const FTDFSettlementSaveData* SettlementSaveData =
+		nullptr;
+
+	for (const FTDFSettlementSaveData& Candidate :
+		SaveGame->Settlements)
+	{
+		if (Candidate.SettlementID ==
+			Settlement->SettlementID)
+		{
+			SettlementSaveData =
+				&Candidate;
+
+			break;
+		}
+	}
+
+	if (!SettlementSaveData)
+	{
+		return;
+	}
+
+	UTDFWorkplaceManager* WorkplaceManager =
+		Settlement->GetWorkplaceManager();
+
+	if (!WorkplaceManager)
+	{
+		return;
+	}
+
+	//-------------------------------------------------------------------------
+	// Citizens
+	//-------------------------------------------------------------------------
+
+	for (const FTDFCitizenSaveData& CitizenSaveData :
+		SettlementSaveData->Citizens)
+	{
+		if (!CitizenSaveData.AssignedWorkplaceBuildingID.IsValid())
+		{
+			continue;
+		}
+
+		UCitizenDataObject* Citizen =
+			nullptr;
+
+		for (UCitizenDataObject* CandidateCitizen :
+			Settlement->Citizens)
+		{
+			if (!CandidateCitizen)
+			{
+				continue;
+			}
+
+			if (CandidateCitizen->CitizenID ==
+				CitizenSaveData.CitizenID)
+			{
+				Citizen =
+					CandidateCitizen;
+
+				break;
+			}
+		}
+
+		if (!Citizen)
+		{
+			continue;
+		}
+
+		ABuildingActor* Workplace =
+			nullptr;
+
+		for (const TWeakObjectPtr<ABuildingActor>& BuildingReference :
+			Settlement->GetRuntimeBuildings())
+		{
+			ABuildingActor* CandidateBuilding =
+				BuildingReference.Get();
+
+			if (!IsValid(
+				CandidateBuilding))
+			{
+				continue;
+			}
+
+			if (CandidateBuilding->GetBuildingID() ==
+				CitizenSaveData.AssignedWorkplaceBuildingID)
+			{
+				Workplace =
+					CandidateBuilding;
+
+				break;
+			}
+		}
+
+		if (!Workplace)
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Load Restore | Missing workplace %s for citizen %s %s"),
+				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString(),
+				*CitizenSaveData.FirstName,
+				*CitizenSaveData.LastName);
+
+			continue;
+		}
+
+		if (!WorkplaceManager->AssignCitizen(
+			Citizen,
+			Workplace))
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Load Restore | Failed workplace assignment | Citizen: %s %s | Building: %s"),
+				*CitizenSaveData.FirstName,
+				*CitizenSaveData.LastName,
+				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString());
+		}
+	}
 }
 
 ABuildingActor*
@@ -315,6 +455,24 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 		Settlement->RegisterBuilding(
 			Building);
+
+		UTDFInventory* BuildingInventory =
+			Building->GetInventory();
+
+		if (BuildingInventory)
+		{
+			BuildingInventory->RestoreItems(
+				BuildingSaveData.InventoryItems);
+		}
+
+		UTDFInventory* ConstructionInventory =
+			Building->GetConstructionInventory();
+
+		if (ConstructionInventory)
+		{
+			ConstructionInventory->RestoreItems(
+				BuildingSaveData.ConstructionInventoryItems);
+		}
 
 		RestoredBuildingCount++;
 
