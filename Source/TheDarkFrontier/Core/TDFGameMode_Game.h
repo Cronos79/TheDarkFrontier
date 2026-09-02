@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright © 2026 The Dark Frontier Project. All Rights Reserved.
 
 #pragma once
 
@@ -14,6 +14,7 @@ class UAllBuildingCategoriesDataAsset;
 class UAllProgressionDataAsset;
 class UAllResourcesDataAsset;
 class UAllFoliageResourcesDataAsset;
+class UAllRecipesDataAsset;
 class USettlementDataObject;
 class UTDFSaveGame;
 
@@ -67,6 +68,13 @@ public:
 		Category = "Resources")
 	TObjectPtr<UAllFoliageResourcesDataAsset>
 		AllFoliageResources;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Recipes")
+	TObjectPtr<UAllRecipesDataAsset>
+		AllRecipes;
 
 	UPROPERTY(
 		EditDefaultsOnly,

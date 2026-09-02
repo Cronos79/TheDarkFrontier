@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright © 2026 The Dark Frontier Project. All Rights Reserved.
 
 #include "TDFGameMode_Game.h"
 
@@ -7,16 +7,17 @@
 #include "Buildings/Systems/TDFPlacementManager.h"
 #include "Buildings/Tags/TDFBuildingTags.h"
 #include "Citizens/Systems/TDFCitizenManager.h"
+#include "Jobs/Systems/TDFWorkplaceManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Production/Data/AllRecipesDataAsset.h"
 #include "Progression/Data/AllProgressionDataAsset.h"
 #include "Resources/Data/AllFoliageResourcesDataAsset.h"
+#include "Resources/Inventory/TDFInventory.h"
 #include "Save/Data/TDFSaveGame.h"
 #include "Save/Systems/TDFSaveSubsystem.h"
 #include "Settlements/Data/SettlementDataObject.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
-#include "Jobs/Systems/TDFWorkplaceManager.h"
-#include "Resources/Inventory/TDFInventory.h"
 
 void ATDFGameMode_Game::BeginPlay()
 {
@@ -80,6 +81,12 @@ void ATDFGameMode_Game::BeginPlay()
 	{
 		WorldSubsystem->SetAllFoliageResources(
 			AllFoliageResources);
+	}
+
+	if (AllRecipes)
+	{
+		WorldSubsystem->SetAllRecipes(
+			AllRecipes);
 	}
 
 	//-------------------------------------------------------------------------
@@ -195,10 +202,6 @@ void ATDFGameMode_Game::RestoreSettlementWorkplaces(
 		return;
 	}
 
-	//-------------------------------------------------------------------------
-	// Find Saved Settlement
-	//-------------------------------------------------------------------------
-
 	const FTDFSettlementSaveData* SettlementSaveData =
 		nullptr;
 
@@ -227,10 +230,6 @@ void ATDFGameMode_Game::RestoreSettlementWorkplaces(
 	{
 		return;
 	}
-
-	//-------------------------------------------------------------------------
-	// Citizens
-	//-------------------------------------------------------------------------
 
 	for (const FTDFCitizenSaveData& CitizenSaveData :
 		SettlementSaveData->Citizens)
@@ -362,10 +361,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		return nullptr;
 	}
 
-	//-------------------------------------------------------------------------
-	// Find Saved Settlement
-	//-------------------------------------------------------------------------
-
 	const FTDFSettlementSaveData* SettlementSaveData =
 		nullptr;
 
@@ -393,10 +388,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		return nullptr;
 	}
 
-	//-------------------------------------------------------------------------
-	// Spawn Anchor Candidates
-	//-------------------------------------------------------------------------
-
 	ABuildingActor* RestoredWagon =
 		nullptr;
 
@@ -405,10 +396,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 	int32 RestoredBuildingCount =
 		0;
-
-	//-------------------------------------------------------------------------
-	// Restore Buildings
-	//-------------------------------------------------------------------------
 
 	for (const FTDFBuildingSaveData& BuildingSaveData :
 		SettlementSaveData->Buildings)
@@ -476,10 +463,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 		RestoredBuildingCount++;
 
-		//-------------------------------------------------------------------------
-		// Fallback Spawn Building
-		//-------------------------------------------------------------------------
-
 		if (!FallbackSpawnBuilding &&
 			BuildingSaveData.VisualState ==
 			ETDFBuildingVisualState::Permanent)
@@ -487,10 +470,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 			FallbackSpawnBuilding =
 				Building;
 		}
-
-		//-------------------------------------------------------------------------
-		// Wagon Is Preferred While It Exists
-		//-------------------------------------------------------------------------
 
 		if (BuildingSaveData.BuildingTag ==
 			TDFBuildingTags::Building_Civic_Wagon)
@@ -506,10 +485,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		TEXT("Load Restore | Settlement: %s | Restored Buildings: %d"),
 		*Settlement->SettlementName,
 		RestoredBuildingCount);
-
-	//-------------------------------------------------------------------------
-	// Citizen Spawn Anchor
-	//-------------------------------------------------------------------------
 
 	if (RestoredWagon)
 	{
@@ -567,10 +542,6 @@ void ATDFGameMode_Game::InitializeSettlementCitizens(
 		return;
 	}
 
-	//-------------------------------------------------------------------------
-	// Loaded Settlement
-	//-------------------------------------------------------------------------
-
 	if (bLoadedGame)
 	{
 		CitizenManager->InitializeLoadedSettlement(
@@ -599,10 +570,6 @@ void ATDFGameMode_Game::InitializeSettlementCitizens(
 
 		return;
 	}
-
-	//-------------------------------------------------------------------------
-	// New Settlement
-	//-------------------------------------------------------------------------
 
 	CitizenManager->InitializeNewSettlement(
 		Settlement);
