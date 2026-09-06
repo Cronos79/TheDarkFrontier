@@ -8,13 +8,17 @@
 
 class ATDFCitizenManager;
 class ATDFPlacementManager;
+class ATDFRoadActor;
 class ABuildingActor;
+
 class UAllBuildingsDataAsset;
 class UAllBuildingCategoriesDataAsset;
 class UAllProgressionDataAsset;
 class UAllResourcesDataAsset;
 class UAllFoliageResourcesDataAsset;
 class UAllRecipesDataAsset;
+class UAllRoadsDataAsset;
+
 class USettlementDataObject;
 class UTDFSaveGame;
 
@@ -30,9 +34,9 @@ protected:
 
 public:
 
-	void RestoreSettlementWorkplaces(
-		USettlementDataObject* Settlement,
-		const UTDFSaveGame* SaveGame);
+	//-------------------------------------------------------------------------
+	// Citizens
+	//-------------------------------------------------------------------------
 
 	UPROPERTY(
 		EditDefaultsOnly,
@@ -40,6 +44,10 @@ public:
 		Category = "Citizens")
 	TSubclassOf<ATDFCitizenManager>
 		CitizenManagerClass;
+
+	//-------------------------------------------------------------------------
+	// Buildings
+	//-------------------------------------------------------------------------
 
 	UPROPERTY(
 		EditDefaultsOnly,
@@ -55,6 +63,28 @@ public:
 	TObjectPtr<UAllBuildingCategoriesDataAsset>
 		AllBuildingCategories;
 
+	//-------------------------------------------------------------------------
+	// Roads
+	//-------------------------------------------------------------------------
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Roads")
+	TObjectPtr<UAllRoadsDataAsset>
+		AllRoads;
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Roads")
+	TSubclassOf<ATDFRoadActor>
+		RoadActorClass;
+
+	//-------------------------------------------------------------------------
+	// Resources
+	//-------------------------------------------------------------------------
+
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,
@@ -69,12 +99,20 @@ public:
 	TObjectPtr<UAllFoliageResourcesDataAsset>
 		AllFoliageResources;
 
+	//-------------------------------------------------------------------------
+	// Recipes
+	//-------------------------------------------------------------------------
+
 	UPROPERTY(
 		EditDefaultsOnly,
 		BlueprintReadOnly,
 		Category = "Recipes")
 	TObjectPtr<UAllRecipesDataAsset>
 		AllRecipes;
+
+	//-------------------------------------------------------------------------
+	// Progression
+	//-------------------------------------------------------------------------
 
 	UPROPERTY(
 		EditDefaultsOnly,
@@ -87,10 +125,22 @@ private:
 
 	ATDFPlacementManager* FindPlacementManager() const;
 
+	//-------------------------------------------------------------------------
+	// Restore
+	//-------------------------------------------------------------------------
+
 	ABuildingActor* RestoreSettlementBuildings(
 		USettlementDataObject* Settlement,
 		const UTDFSaveGame* SaveGame,
 		ATDFPlacementManager* PlacementManager);
+
+	void RestoreSettlementRoads(
+		USettlementDataObject* Settlement,
+		const UTDFSaveGame* SaveGame);
+
+	void RestoreSettlementWorkplaces(
+		USettlementDataObject* Settlement,
+		const UTDFSaveGame* SaveGame);
 
 	void InitializeSettlementCitizens(
 		USettlementDataObject* Settlement,

@@ -13,6 +13,8 @@
 #include "Progression/Data/AllProgressionDataAsset.h"
 #include "Resources/Data/AllFoliageResourcesDataAsset.h"
 #include "Resources/Inventory/TDFInventory.h"
+#include "Roads/Actors/TDFRoadActor.h"
+#include "Roads/Data/TDFRoadDataAsset.h"
 #include "Save/Data/TDFSaveGame.h"
 #include "Save/Systems/TDFSaveSubsystem.h"
 #include "Settlements/Data/SettlementDataObject.h"
@@ -71,6 +73,12 @@ void ATDFGameMode_Game::BeginPlay()
 			AllBuildingCategories);
 	}
 
+	if (AllRoads)
+	{
+		WorldSubsystem->SetAllRoads(
+			AllRoads);
+	}
+
 	if (AllResources)
 	{
 		WorldSubsystem->SetAllResources(
@@ -119,7 +127,7 @@ void ATDFGameMode_Game::BeginPlay()
 		}
 
 		//-------------------------------------------------------------------------
-		// Restore Buildings
+		// Restore World Actors
 		//-------------------------------------------------------------------------
 
 		ABuildingActor* CitizenSpawnBuilding =
@@ -133,6 +141,10 @@ void ATDFGameMode_Game::BeginPlay()
 					Settlement,
 					PendingSave,
 					PlacementManager);
+
+			RestoreSettlementRoads(
+				Settlement,
+				PendingSave);
 
 			RestoreSettlementWorkplaces(
 				Settlement,
@@ -192,131 +204,9 @@ ATDFGameMode_Game::FindPlacementManager() const
 			ATDFPlacementManager::StaticClass()));
 }
 
-void ATDFGameMode_Game::RestoreSettlementWorkplaces(
-	USettlementDataObject* Settlement,
-	const UTDFSaveGame* SaveGame)
-{
-	if (!Settlement ||
-		!SaveGame)
-	{
-		return;
-	}
-
-	const FTDFSettlementSaveData* SettlementSaveData =
-		nullptr;
-
-	for (const FTDFSettlementSaveData& Candidate :
-		SaveGame->Settlements)
-	{
-		if (Candidate.SettlementID ==
-			Settlement->SettlementID)
-		{
-			SettlementSaveData =
-				&Candidate;
-
-			break;
-		}
-	}
-
-	if (!SettlementSaveData)
-	{
-		return;
-	}
-
-	UTDFWorkplaceManager* WorkplaceManager =
-		Settlement->GetWorkplaceManager();
-
-	if (!WorkplaceManager)
-	{
-		return;
-	}
-
-	for (const FTDFCitizenSaveData& CitizenSaveData :
-		SettlementSaveData->Citizens)
-	{
-		if (!CitizenSaveData.AssignedWorkplaceBuildingID.IsValid())
-		{
-			continue;
-		}
-
-		UCitizenDataObject* Citizen =
-			nullptr;
-
-		for (UCitizenDataObject* CandidateCitizen :
-			Settlement->Citizens)
-		{
-			if (!CandidateCitizen)
-			{
-				continue;
-			}
-
-			if (CandidateCitizen->CitizenID ==
-				CitizenSaveData.CitizenID)
-			{
-				Citizen =
-					CandidateCitizen;
-
-				break;
-			}
-		}
-
-		if (!Citizen)
-		{
-			continue;
-		}
-
-		ABuildingActor* Workplace =
-			nullptr;
-
-		for (const TWeakObjectPtr<ABuildingActor>& BuildingReference :
-			Settlement->GetRuntimeBuildings())
-		{
-			ABuildingActor* CandidateBuilding =
-				BuildingReference.Get();
-
-			if (!IsValid(
-				CandidateBuilding))
-			{
-				continue;
-			}
-
-			if (CandidateBuilding->GetBuildingID() ==
-				CitizenSaveData.AssignedWorkplaceBuildingID)
-			{
-				Workplace =
-					CandidateBuilding;
-
-				break;
-			}
-		}
-
-		if (!Workplace)
-		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Missing workplace %s for citizen %s %s"),
-				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString(),
-				*CitizenSaveData.FirstName,
-				*CitizenSaveData.LastName);
-
-			continue;
-		}
-
-		if (!WorkplaceManager->AssignCitizen(
-			Citizen,
-			Workplace))
-		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Failed workplace assignment | Citizen: %s %s | Building: %s"),
-				*CitizenSaveData.FirstName,
-				*CitizenSaveData.LastName,
-				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString());
-		}
-	}
-}
+//-----------------------------------------------------------------------------
+// Restore Buildings
+//-----------------------------------------------------------------------------
 
 ABuildingActor*
 ATDFGameMode_Game::RestoreSettlementBuildings(
@@ -520,6 +410,295 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 	return nullptr;
 }
+
+//-----------------------------------------------------------------------------
+// Restore Roads
+//-----------------------------------------------------------------------------
+
+void ATDFGameMode_Game::RestoreSettlementRoads(
+	USettlementDataObject* Settlement,
+	const UTDFSaveGame* SaveGame)
+{
+	if (!Settlement ||
+		!SaveGame ||
+		!GetWorld())
+	{
+		return;
+	}
+
+	if (!RoadActorClass)
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("Load Restore | GameMode has no RoadActorClass"));
+
+		return;
+	}
+
+	UGameInstance* GameInstance =
+		GetGameInstance();
+
+	if (!GameInstance)
+	{
+		return;
+	}
+
+	UTDFWorldSubsystem* WorldSubsystem =
+		GameInstance->GetSubsystem<UTDFWorldSubsystem>();
+
+	if (!WorldSubsystem)
+	{
+		return;
+	}
+
+	const FTDFSettlementSaveData* SettlementSaveData =
+		nullptr;
+
+	for (const FTDFSettlementSaveData& Candidate :
+		SaveGame->Settlements)
+	{
+		if (Candidate.SettlementID ==
+			Settlement->SettlementID)
+		{
+			SettlementSaveData =
+				&Candidate;
+
+			break;
+		}
+	}
+
+	if (!SettlementSaveData)
+	{
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("Load Restore | No road save record found for settlement %s"),
+			*Settlement->SettlementName);
+
+		return;
+	}
+
+	int32 RestoredRoadCount =
+		0;
+
+	//-------------------------------------------------------------------------
+	// Spawn Saved Road Tiles
+	//-------------------------------------------------------------------------
+
+	for (const FTDFRoadSaveData& RoadSaveData :
+		SettlementSaveData->Roads)
+	{
+		if (!RoadSaveData.RoadTag.IsValid())
+		{
+			continue;
+		}
+
+		UTDFRoadDataAsset* RoadData =
+			WorldSubsystem->FindRoadByTag(
+				RoadSaveData.RoadTag);
+
+		if (!RoadData)
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Load Restore | Missing RoadData for %s"),
+				*RoadSaveData.RoadTag.ToString());
+
+			continue;
+		}
+
+		const FTransform RoadTransform(
+			FRotator::ZeroRotator,
+			RoadSaveData.Location,
+			FVector::OneVector);
+
+		ATDFRoadActor* Road =
+			GetWorld()->SpawnActorDeferred<ATDFRoadActor>(
+				RoadActorClass,
+				RoadTransform);
+
+		if (!Road)
+		{
+			continue;
+		}
+
+		Road->InitializeRoad(
+			RoadData);
+
+		Road->FinishSpawning(
+			RoadTransform);
+
+		Settlement->RegisterRoad(
+			Road);
+
+		RestoredRoadCount++;
+	}
+
+	//-------------------------------------------------------------------------
+	// Final Connection Pass
+	//
+	// Individual roads refresh neighbors while spawning, but this final pass
+	// guarantees every road sees the complete restored road network.
+	//-------------------------------------------------------------------------
+
+	for (const TWeakObjectPtr<ATDFRoadActor>& RoadReference :
+		Settlement->GetRuntimeRoads())
+	{
+		ATDFRoadActor* Road =
+			RoadReference.Get();
+
+		if (!IsValid(
+			Road))
+		{
+			continue;
+		}
+
+		Road->UpdateConnections();
+	}
+
+	UE_LOG(
+		LogTemp,
+		Display,
+		TEXT("Load Restore | Settlement: %s | Restored Roads: %d"),
+		*Settlement->SettlementName,
+		RestoredRoadCount);
+}
+
+//-----------------------------------------------------------------------------
+// Restore Workplaces
+//-----------------------------------------------------------------------------
+
+void ATDFGameMode_Game::RestoreSettlementWorkplaces(
+	USettlementDataObject* Settlement,
+	const UTDFSaveGame* SaveGame)
+{
+	if (!Settlement ||
+		!SaveGame)
+	{
+		return;
+	}
+
+	const FTDFSettlementSaveData* SettlementSaveData =
+		nullptr;
+
+	for (const FTDFSettlementSaveData& Candidate :
+		SaveGame->Settlements)
+	{
+		if (Candidate.SettlementID ==
+			Settlement->SettlementID)
+		{
+			SettlementSaveData =
+				&Candidate;
+
+			break;
+		}
+	}
+
+	if (!SettlementSaveData)
+	{
+		return;
+	}
+
+	UTDFWorkplaceManager* WorkplaceManager =
+		Settlement->GetWorkplaceManager();
+
+	if (!WorkplaceManager)
+	{
+		return;
+	}
+
+	for (const FTDFCitizenSaveData& CitizenSaveData :
+		SettlementSaveData->Citizens)
+	{
+		if (!CitizenSaveData.AssignedWorkplaceBuildingID.IsValid())
+		{
+			continue;
+		}
+
+		UCitizenDataObject* Citizen =
+			nullptr;
+
+		for (UCitizenDataObject* CandidateCitizen :
+			Settlement->Citizens)
+		{
+			if (!CandidateCitizen)
+			{
+				continue;
+			}
+
+			if (CandidateCitizen->CitizenID ==
+				CitizenSaveData.CitizenID)
+			{
+				Citizen =
+					CandidateCitizen;
+
+				break;
+			}
+		}
+
+		if (!Citizen)
+		{
+			continue;
+		}
+
+		ABuildingActor* Workplace =
+			nullptr;
+
+		for (const TWeakObjectPtr<ABuildingActor>& BuildingReference :
+			Settlement->GetRuntimeBuildings())
+		{
+			ABuildingActor* CandidateBuilding =
+				BuildingReference.Get();
+
+			if (!IsValid(
+				CandidateBuilding))
+			{
+				continue;
+			}
+
+			if (CandidateBuilding->GetBuildingID() ==
+				CitizenSaveData.AssignedWorkplaceBuildingID)
+			{
+				Workplace =
+					CandidateBuilding;
+
+				break;
+			}
+		}
+
+		if (!Workplace)
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Load Restore | Missing workplace %s for citizen %s %s"),
+				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString(),
+				*CitizenSaveData.FirstName,
+				*CitizenSaveData.LastName);
+
+			continue;
+		}
+
+		if (!WorkplaceManager->AssignCitizen(
+			Citizen,
+			Workplace))
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Load Restore | Failed workplace assignment | Citizen: %s %s | Building: %s"),
+				*CitizenSaveData.FirstName,
+				*CitizenSaveData.LastName,
+				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString());
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Citizens
+//-----------------------------------------------------------------------------
 
 void ATDFGameMode_Game::InitializeSettlementCitizens(
 	USettlementDataObject* Settlement,

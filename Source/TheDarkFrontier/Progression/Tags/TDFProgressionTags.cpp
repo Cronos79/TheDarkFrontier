@@ -41,6 +41,10 @@ namespace TDFProgressionTags
 		"Progression.Reward.Unlock.Building");
 
 	UE_DEFINE_GAMEPLAY_TAG(
+		Reward_Unlock_Road,
+		"Progression.Reward.Unlock.Road");
+
+	UE_DEFINE_GAMEPLAY_TAG(
 		Reward_Unlock_Resource,
 		"Progression.Reward.Unlock.Resource");
 
