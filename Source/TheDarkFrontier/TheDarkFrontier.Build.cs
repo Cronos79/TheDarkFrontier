@@ -21,7 +21,8 @@ public class TheDarkFrontier : ModuleRules
                 "Landscape",
                 "GameplayTags",
                 "Foliage",
-                "NavigationSystem"
+                "NavigationSystem",
+                "EngineSettings"
             });
 
         PrivateDependencyModuleNames.AddRange(new string[]
