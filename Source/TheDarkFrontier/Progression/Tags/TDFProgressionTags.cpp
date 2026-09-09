@@ -59,4 +59,8 @@ namespace TDFProgressionTags
 	UE_DEFINE_GAMEPLAY_TAG(
 		Reward_Unlock_Upgrade,
 		"Progression.Reward.Unlock.Upgrade");
+
+	UE_DEFINE_GAMEPLAY_TAG(
+		Reward_Add_Citizen,
+		"Progression.Reward.Add.Citizen");
 }

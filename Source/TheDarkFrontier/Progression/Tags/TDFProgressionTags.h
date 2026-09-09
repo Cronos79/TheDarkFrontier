@@ -49,4 +49,7 @@ namespace TDFProgressionTags
 
 	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
 		Reward_Unlock_Upgrade);
+
+	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
+		Reward_Add_Citizen);
 }
