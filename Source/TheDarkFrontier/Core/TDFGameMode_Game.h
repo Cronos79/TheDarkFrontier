@@ -129,6 +129,9 @@ private:
 	// Restore
 	//-------------------------------------------------------------------------
 
+	void RestoreWorldFoliage(
+		const UTDFSaveGame* SaveGame);
+
 	ABuildingActor* RestoreSettlementBuildings(
 		USettlementDataObject* Settlement,
 		const UTDFSaveGame* SaveGame,

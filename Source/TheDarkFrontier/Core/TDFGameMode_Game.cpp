@@ -7,17 +7,23 @@
 #include "Buildings/Systems/TDFPlacementManager.h"
 #include "Buildings/Tags/TDFBuildingTags.h"
 #include "Citizens/Systems/TDFCitizenManager.h"
+#include "Engine/StaticMesh.h"
 #include "Jobs/Systems/TDFWorkplaceManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "Production/Data/AllRecipesDataAsset.h"
 #include "Progression/Data/AllProgressionDataAsset.h"
 #include "Resources/Data/AllFoliageResourcesDataAsset.h"
+#include "Resources/Data/TDFFoliageResourceDataAsset.h"
 #include "Resources/Inventory/TDFInventory.h"
+#include "Resources/Systems/TDFFoliageResourceManager.h"
 #include "Roads/Actors/TDFRoadActor.h"
 #include "Roads/Data/TDFRoadDataAsset.h"
 #include "Save/Data/TDFSaveGame.h"
 #include "Save/Systems/TDFSaveSubsystem.h"
 #include "Settlements/Data/SettlementDataObject.h"
+#include "World/Forestry/Actors/TDFPlantResourceActor.h"
+#include "World/Forestry/Actors/TDFTreeActor.h"
+#include "World/Forestry/Systems/TDFForestryManager.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
 
@@ -95,6 +101,20 @@ void ATDFGameMode_Game::BeginPlay()
 	{
 		WorldSubsystem->SetAllRecipes(
 			AllRecipes);
+	}
+
+	//-------------------------------------------------------------------------
+	// Restore World Foliage
+	//
+	// Do this before citizens begin working so the gatherable world matches
+	// the save before any new forestry jobs are requested.
+	//-------------------------------------------------------------------------
+
+	if (bLoadedGame &&
+		PendingSave)
+	{
+		RestoreWorldFoliage(
+			PendingSave);
 	}
 
 	//-------------------------------------------------------------------------
@@ -205,6 +225,241 @@ ATDFGameMode_Game::FindPlacementManager() const
 }
 
 //-----------------------------------------------------------------------------
+// Restore World Foliage
+//-----------------------------------------------------------------------------
+
+void ATDFGameMode_Game::RestoreWorldFoliage(
+	const UTDFSaveGame* SaveGame)
+{
+	if (!SaveGame ||
+		!GetWorld())
+	{
+		return;
+	}
+
+	UGameInstance* GameInstance =
+		GetGameInstance();
+
+	if (!GameInstance)
+	{
+		return;
+	}
+
+	UTDFWorldSubsystem* WorldSubsystem =
+		GameInstance->GetSubsystem<
+		UTDFWorldSubsystem>();
+
+	if (!WorldSubsystem)
+	{
+		return;
+	}
+
+	UTDFForestryManager* ForestryManager =
+		GetWorld()->GetSubsystem<
+		UTDFForestryManager>();
+
+	if (!ForestryManager)
+	{
+		return;
+	}
+
+	UTDFFoliageResourceManager* FoliageResourceManager =
+		WorldSubsystem->GetFoliageResourceManager();
+
+	if (!FoliageResourceManager)
+	{
+		return;
+	}
+
+	ForestryManager->ResetPromotedSources();
+
+	int32 RemovedCount =
+		0;
+
+	int32 RestoredPromotedCount =
+		0;
+
+	//-------------------------------------------------------------------------
+	// Remove Original Map Foliage
+	//-------------------------------------------------------------------------
+
+	for (const FTDFFoliageRemovalSaveData& Removal :
+		SaveGame->RemovedFoliage)
+	{
+		if (!Removal.MeshPath.IsValid())
+		{
+			continue;
+		}
+
+		UStaticMesh* Mesh =
+			Cast<UStaticMesh>(
+				Removal.MeshPath.TryLoad());
+
+		if (!Mesh)
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Forestry Restore | Missing mesh: %s"),
+				*Removal.MeshPath.ToString());
+
+			continue;
+		}
+
+		if (ForestryManager->RemoveOriginalFoliageInstance(
+			Mesh,
+			Removal.OriginalTransform))
+		{
+			++RemovedCount;
+		}
+
+		// Register the removed source even when no promoted actor exists.
+		// If there is an active promoted actor below, the same record will be
+		// updated rather than duplicated.
+		ForestryManager->RegisterRestoredSource(
+			Mesh,
+			Removal.OriginalTransform,
+			nullptr,
+			false);
+	}
+
+	//-------------------------------------------------------------------------
+	// Restore Active Promoted Foliage
+	//-------------------------------------------------------------------------
+
+	for (const FTDFPromotedFoliageSaveData& Promoted :
+		SaveGame->PromotedFoliage)
+	{
+		if (!Promoted.MeshPath.IsValid())
+		{
+			continue;
+		}
+
+		UStaticMesh* Mesh =
+			Cast<UStaticMesh>(
+				Promoted.MeshPath.TryLoad());
+
+		if (!Mesh)
+		{
+			continue;
+		}
+
+		UTDFFoliageResourceDataAsset* FoliageData =
+			FoliageResourceManager->FindByMesh(
+				Mesh);
+
+		if (!FoliageData)
+		{
+			UE_LOG(
+				LogTemp,
+				Warning,
+				TEXT("Forestry Restore | No foliage resource data for mesh: %s"),
+				*Mesh->GetName());
+
+			continue;
+		}
+
+		AActor* RestoredActor =
+			nullptr;
+
+		//---------------------------------------------------------------------
+		// Tree
+		//---------------------------------------------------------------------
+
+		if (Promoted.bIsTree)
+		{
+			ATDFTreeActor* TreeActor =
+				GetWorld()->SpawnActorDeferred<
+				ATDFTreeActor>(
+					ATDFTreeActor::StaticClass(),
+					Promoted.ActorTransform);
+
+			if (!TreeActor)
+			{
+				continue;
+			}
+
+			TreeActor->InitializeTree(
+				FoliageData);
+
+			TreeActor->FinishSpawning(
+				Promoted.ActorTransform);
+
+			UTDFInventory* Inventory =
+				TreeActor->GetInventory();
+
+			if (Inventory)
+			{
+				Inventory->RestoreItems(
+					Promoted.InventoryItems);
+			}
+
+			RestoredActor =
+				TreeActor;
+		}
+
+		//---------------------------------------------------------------------
+		// Plant
+		//---------------------------------------------------------------------
+
+		else
+		{
+			ATDFPlantResourceActor* PlantActor =
+				GetWorld()->SpawnActorDeferred<
+				ATDFPlantResourceActor>(
+					ATDFPlantResourceActor::StaticClass(),
+					Promoted.ActorTransform);
+
+			if (!PlantActor)
+			{
+				continue;
+			}
+
+			PlantActor->InitializePlant(
+				FoliageData);
+
+			PlantActor->FinishSpawning(
+				Promoted.ActorTransform);
+
+			UTDFInventory* Inventory =
+				PlantActor->GetInventory();
+
+			if (Inventory)
+			{
+				Inventory->RestoreItems(
+					Promoted.InventoryItems);
+			}
+
+			RestoredActor =
+				PlantActor;
+		}
+
+		if (!IsValid(
+			RestoredActor))
+		{
+			continue;
+		}
+
+		ForestryManager->RegisterRestoredSource(
+			Mesh,
+			Promoted.OriginalTransform,
+			RestoredActor,
+			Promoted.bIsTree);
+
+		++RestoredPromotedCount;
+	}
+
+	UE_LOG(
+		LogTemp,
+		Display,
+		TEXT("Forestry Restore | Removed Originals: %d/%d | Restored Promoted: %d/%d"),
+		RemovedCount,
+		SaveGame->RemovedFoliage.Num(),
+		RestoredPromotedCount,
+		SaveGame->PromotedFoliage.Num());
+}
+
+//-----------------------------------------------------------------------------
 // Restore Buildings
 //-----------------------------------------------------------------------------
 
@@ -269,12 +524,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 	if (!SettlementSaveData)
 	{
-		UE_LOG(
-			LogTemp,
-			Warning,
-			TEXT("Load Restore | No save record found for settlement %s"),
-			*Settlement->SettlementName);
-
 		return nullptr;
 	}
 
@@ -302,12 +551,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 		if (!BuildingData)
 		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Missing BuildingData for %s"),
-				*BuildingSaveData.BuildingTag.ToString());
-
 			continue;
 		}
 
@@ -378,35 +621,13 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 
 	if (RestoredWagon)
 	{
-		UE_LOG(
-			LogTemp,
-			Display,
-			TEXT("Load Restore | Citizen spawn anchor: Wagon"));
-
 		return RestoredWagon;
 	}
 
 	if (FallbackSpawnBuilding)
 	{
-		UBuildingDataAsset* SpawnBuildingData =
-			FallbackSpawnBuilding->GetBuildingData();
-
-		UE_LOG(
-			LogTemp,
-			Display,
-			TEXT("Load Restore | Citizen spawn anchor: %s"),
-			SpawnBuildingData
-			? *SpawnBuildingData->BuildingTag.ToString()
-			: TEXT("Fallback Building"));
-
 		return FallbackSpawnBuilding;
 	}
-
-	UE_LOG(
-		LogTemp,
-		Warning,
-		TEXT("Load Restore | No valid citizen spawn building found for %s"),
-		*Settlement->SettlementName);
 
 	return nullptr;
 }
@@ -428,11 +649,6 @@ void ATDFGameMode_Game::RestoreSettlementRoads(
 
 	if (!RoadActorClass)
 	{
-		UE_LOG(
-			LogTemp,
-			Error,
-			TEXT("Load Restore | GameMode has no RoadActorClass"));
-
 		return;
 	}
 
@@ -470,21 +686,11 @@ void ATDFGameMode_Game::RestoreSettlementRoads(
 
 	if (!SettlementSaveData)
 	{
-		UE_LOG(
-			LogTemp,
-			Warning,
-			TEXT("Load Restore | No road save record found for settlement %s"),
-			*Settlement->SettlementName);
-
 		return;
 	}
 
 	int32 RestoredRoadCount =
 		0;
-
-	//-------------------------------------------------------------------------
-	// Spawn Saved Road Tiles
-	//-------------------------------------------------------------------------
 
 	for (const FTDFRoadSaveData& RoadSaveData :
 		SettlementSaveData->Roads)
@@ -500,12 +706,6 @@ void ATDFGameMode_Game::RestoreSettlementRoads(
 
 		if (!RoadData)
 		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Missing RoadData for %s"),
-				*RoadSaveData.RoadTag.ToString());
-
 			continue;
 		}
 
@@ -535,13 +735,6 @@ void ATDFGameMode_Game::RestoreSettlementRoads(
 
 		RestoredRoadCount++;
 	}
-
-	//-------------------------------------------------------------------------
-	// Final Connection Pass
-	//
-	// Individual roads refresh neighbors while spawning, but this final pass
-	// guarantees every road sees the complete restored road network.
-	//-------------------------------------------------------------------------
 
 	for (const TWeakObjectPtr<ATDFRoadActor>& RoadReference :
 		Settlement->GetRuntimeRoads())
@@ -670,29 +863,12 @@ void ATDFGameMode_Game::RestoreSettlementWorkplaces(
 
 		if (!Workplace)
 		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Missing workplace %s for citizen %s %s"),
-				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString(),
-				*CitizenSaveData.FirstName,
-				*CitizenSaveData.LastName);
-
 			continue;
 		}
 
-		if (!WorkplaceManager->AssignCitizen(
+		WorkplaceManager->AssignCitizen(
 			Citizen,
-			Workplace))
-		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | Failed workplace assignment | Citizen: %s %s | Building: %s"),
-				*CitizenSaveData.FirstName,
-				*CitizenSaveData.LastName,
-				*CitizenSaveData.AssignedWorkplaceBuildingID.ToString());
-		}
+			Workplace);
 	}
 }
 
@@ -736,14 +912,6 @@ void ATDFGameMode_Game::InitializeSettlementCitizens(
 				Display,
 				TEXT("Load Restore | Spawned %d citizens for %s"),
 				Settlement->Citizens.Num(),
-				*Settlement->SettlementName);
-		}
-		else
-		{
-			UE_LOG(
-				LogTemp,
-				Warning,
-				TEXT("Load Restore | No citizen spawn anchor for %s; citizens were not spawned"),
 				*Settlement->SettlementName);
 		}
 
