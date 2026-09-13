@@ -63,3 +63,10 @@
 - UI is still under development.
 - Audio and presentation polish are incomplete.
 - Additional gameplay tuning and packaged-build testing are still required.
+
+### Added
+
+- Camera rotation
+  - Added middle-mouse drag camera rotation.
+  - Camera-relative WASD movement updates with the current camera orientation.
+  - Camera rotation is preserved while zooming.
