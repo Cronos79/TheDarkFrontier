@@ -9,9 +9,11 @@
 class ATDFCitizenManager;
 class ATDFPlacementManager;
 class ATDFRoadActor;
+class ATDFSalvagePileActor;
 class ABuildingActor;
 
 class UAllBuildingsDataAsset;
+class UBuildingDataAsset;
 class UAllBuildingCategoriesDataAsset;
 class UAllProgressionDataAsset;
 class UAllResourcesDataAsset;
@@ -98,6 +100,17 @@ public:
 		Category = "Resources")
 	TObjectPtr<UAllFoliageResourcesDataAsset>
 		AllFoliageResources;
+
+	//-------------------------------------------------------------------------
+	// Salvage
+	//-------------------------------------------------------------------------
+
+	UPROPERTY(
+		EditDefaultsOnly,
+		BlueprintReadOnly,
+		Category = "Resources|Salvage")
+	TSubclassOf<ATDFSalvagePileActor>
+		SalvagePileActorClass;
 
 	//-------------------------------------------------------------------------
 	// Recipes
