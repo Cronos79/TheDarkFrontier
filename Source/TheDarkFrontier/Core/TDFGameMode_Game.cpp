@@ -493,19 +493,6 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		return nullptr;
 	}
 
-	TSubclassOf<ABuildingActor> BuildingActorClass =
-		PlacementManager->GetBuildingActorClass();
-
-	if (!BuildingActorClass)
-	{
-		UE_LOG(
-			LogTemp,
-			Error,
-			TEXT("Load Restore | Placement Manager has no BuildingActorClass"));
-
-		return nullptr;
-	}
-
 	const FTDFSettlementSaveData* SettlementSaveData =
 		nullptr;
 
@@ -545,6 +532,10 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 			continue;
 		}
 
+		//-------------------------------------------------------------------------
+		// Building Data
+		//-------------------------------------------------------------------------
+
 		UBuildingDataAsset* BuildingData =
 			WorldSubsystem->FindBuildingByTag(
 				BuildingSaveData.BuildingTag);
@@ -554,9 +545,37 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 			continue;
 		}
 
+		//-------------------------------------------------------------------------
+		// Resolve Actor Class
+		//
+		// Specialized buildings can define their own actor class in their data
+		// asset. Buildings without one continue using the generic building actor.
+		//-------------------------------------------------------------------------
+
+		const TSubclassOf<ABuildingActor>
+			ResolvedBuildingActorClass =
+			PlacementManager->GetBuildingActorClassForData(
+				BuildingData);
+
+		if (!ResolvedBuildingActorClass)
+		{
+			UE_LOG(
+				LogTemp,
+				Error,
+				TEXT(
+					"Load Restore | No actor class for building: %s"),
+				*BuildingSaveData.BuildingTag.ToString());
+
+			continue;
+		}
+
+		//-------------------------------------------------------------------------
+		// Spawn
+		//-------------------------------------------------------------------------
+
 		ABuildingActor* Building =
 			GetWorld()->SpawnActorDeferred<ABuildingActor>(
-				BuildingActorClass,
+				ResolvedBuildingActorClass,
 				BuildingSaveData.Transform);
 
 		if (!Building)
@@ -573,8 +592,16 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		Building->FinishSpawning(
 			BuildingSaveData.Transform);
 
+		//-------------------------------------------------------------------------
+		// Register
+		//-------------------------------------------------------------------------
+
 		Settlement->RegisterBuilding(
 			Building);
+
+		//-------------------------------------------------------------------------
+		// Restore Permanent Inventory
+		//-------------------------------------------------------------------------
 
 		UTDFInventory* BuildingInventory =
 			Building->GetInventory();
@@ -585,6 +612,10 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 				BuildingSaveData.InventoryItems);
 		}
 
+		//-------------------------------------------------------------------------
+		// Restore Construction Inventory
+		//-------------------------------------------------------------------------
+
 		UTDFInventory* ConstructionInventory =
 			Building->GetConstructionInventory();
 
@@ -594,7 +625,11 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 				BuildingSaveData.ConstructionInventoryItems);
 		}
 
-		RestoredBuildingCount++;
+		++RestoredBuildingCount;
+
+		//-------------------------------------------------------------------------
+		// Fallback Citizen Spawn Building
+		//-------------------------------------------------------------------------
 
 		if (!FallbackSpawnBuilding &&
 			BuildingSaveData.VisualState ==
@@ -603,6 +638,10 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 			FallbackSpawnBuilding =
 				Building;
 		}
+
+		//-------------------------------------------------------------------------
+		// Wagon
+		//-------------------------------------------------------------------------
 
 		if (BuildingSaveData.BuildingTag ==
 			TDFBuildingTags::Building_Civic_Wagon)
@@ -615,7 +654,8 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 	UE_LOG(
 		LogTemp,
 		Display,
-		TEXT("Load Restore | Settlement: %s | Restored Buildings: %d"),
+		TEXT(
+			"Load Restore | Settlement: %s | Restored Buildings: %d"),
 		*Settlement->SettlementName,
 		RestoredBuildingCount);
 
