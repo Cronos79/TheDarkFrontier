@@ -26,6 +26,7 @@
 #include "World/Forestry/Systems/TDFForestryManager.h"
 #include "World/Systems/TDFTimeSubsystem.h"
 #include "World/Systems/TDFWorldSubsystem.h"
+#include "Buildings/Actors/TDFTavernBuilding.h"
 
 void ATDFGameMode_Game::BeginPlay()
 {
@@ -523,6 +524,13 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 	int32 RestoredBuildingCount =
 		0;
 
+	int32 RestoredTavernGuestGroupCount =
+		0;
+
+	//-------------------------------------------------------------------------
+	// Buildings
+	//-------------------------------------------------------------------------
+
 	for (const FTDFBuildingSaveData& BuildingSaveData :
 		SettlementSaveData->Buildings)
 	{
@@ -625,6 +633,55 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 				BuildingSaveData.ConstructionInventoryItems);
 		}
 
+		//-------------------------------------------------------------------------
+		// Restore Tavern Guests
+		//
+		// The saved guest groups belong to this exact BuildingID, because they
+		// are stored inside this building's FTDFBuildingSaveData.
+		//-------------------------------------------------------------------------
+
+		ATDFTavernBuilding* Tavern =
+			Cast<ATDFTavernBuilding>(
+				Building);
+
+		if (Tavern)
+		{
+			Tavern->RestoreGuestGroups(
+				BuildingSaveData.TavernGuestGroups);
+
+			RestoredTavernGuestGroupCount +=
+				Tavern->GetGuestGroupCount();
+
+			if (!BuildingSaveData.TavernGuestGroups.IsEmpty())
+			{
+				UE_LOG(
+					LogTemp,
+					Display,
+					TEXT(
+						"Load Restore | Tavern: %s | Guest Groups: %d | Guests: %d"),
+					*Building->GetName(),
+					Tavern->GetGuestGroupCount(),
+					Tavern->GetGuestCount());
+			}
+		}
+		else if (!BuildingSaveData.TavernGuestGroups.IsEmpty())
+		{
+			//-------------------------------------------------------------------------
+			// Saved Tavern Data On Non-Tavern Actor
+			//
+			// This should never happen when BuildingActorClass is configured
+			// correctly. Keep the warning because silently dropping guests would
+			// corrupt the loaded simulation state.
+			//-------------------------------------------------------------------------
+
+			UE_LOG(
+				LogTemp,
+				Error,
+				TEXT(
+					"Load Restore | Building %s has saved Tavern guest groups but restored actor is not ATDFTavernBuilding."),
+				*Building->GetName());
+		}
+
 		++RestoredBuildingCount;
 
 		//-------------------------------------------------------------------------
@@ -655,9 +712,10 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		LogTemp,
 		Display,
 		TEXT(
-			"Load Restore | Settlement: %s | Restored Buildings: %d"),
+			"Load Restore | Settlement: %s | Restored Buildings: %d | Tavern Guest Groups: %d"),
 		*Settlement->SettlementName,
-		RestoredBuildingCount);
+		RestoredBuildingCount,
+		RestoredTavernGuestGroupCount);
 
 	if (RestoredWagon)
 	{
