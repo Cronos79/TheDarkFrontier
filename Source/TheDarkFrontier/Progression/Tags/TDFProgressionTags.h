@@ -17,6 +17,9 @@ namespace TDFProgressionTags
 		Metric_Building_Completed);
 
 	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
+		Metric_Building_UpgradeLevel);
+
+	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
 		Metric_Resource_Gathered);
 
 	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
@@ -52,4 +55,7 @@ namespace TDFProgressionTags
 
 	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
 		Reward_Add_Citizen);
+
+	THEDARKFRONTIER_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(
+		Reward_Set_SettlementTier);
 }

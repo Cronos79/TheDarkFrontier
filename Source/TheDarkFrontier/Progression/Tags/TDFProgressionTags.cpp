@@ -17,6 +17,10 @@ namespace TDFProgressionTags
 		"Progression.Metric.Building.Completed");
 
 	UE_DEFINE_GAMEPLAY_TAG(
+		Metric_Building_UpgradeLevel,
+		"Progression.Metric.Building.UpgradeLevel");
+
+	UE_DEFINE_GAMEPLAY_TAG(
 		Metric_Resource_Gathered,
 		"Progression.Metric.Resource.Gathered");
 
@@ -63,4 +67,8 @@ namespace TDFProgressionTags
 	UE_DEFINE_GAMEPLAY_TAG(
 		Reward_Add_Citizen,
 		"Progression.Reward.Add.Citizen");
+
+	UE_DEFINE_GAMEPLAY_TAG(
+		Reward_Set_SettlementTier,
+		"Progression.Reward.Set.SettlementTier");
 }

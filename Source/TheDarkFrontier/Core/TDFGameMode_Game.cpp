@@ -597,6 +597,19 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 			BuildingSaveData.VisualState,
 			BuildingSaveData.CurrentConstructionWork);
 
+		if (!Building->RestoreUpgradeState(
+			BuildingSaveData.BuildingLevel,
+			BuildingSaveData.ActiveUpgradeID,
+			BuildingSaveData.CurrentUpgradeWork))
+		{
+			UE_LOG(
+				LogTemp,
+				Error,
+				TEXT(
+					"Load Restore | Failed to restore upgrade state for building %s."),
+				*BuildingSaveData.BuildingTag.ToString());
+		}
+
 		Building->FinishSpawning(
 			BuildingSaveData.Transform);
 
@@ -631,6 +644,19 @@ ATDFGameMode_Game::RestoreSettlementBuildings(
 		{
 			ConstructionInventory->RestoreItems(
 				BuildingSaveData.ConstructionInventoryItems);
+		}
+
+		//-------------------------------------------------------------------------
+		// Restore Upgrade Inventory
+		//-------------------------------------------------------------------------
+
+		UTDFInventory* UpgradeInventory =
+			Building->GetUpgradeInventory();
+
+		if (UpgradeInventory)
+		{
+			UpgradeInventory->RestoreItems(
+				BuildingSaveData.UpgradeInventoryItems);
 		}
 
 		//-------------------------------------------------------------------------
