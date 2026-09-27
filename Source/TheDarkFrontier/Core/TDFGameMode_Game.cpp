@@ -207,6 +207,11 @@ void ATDFGameMode_Game::BeginPlay()
 
 	if (TimeSubsystem)
 	{
+		if (!bLoadedGame)
+		{
+			TimeSubsystem->ResetForNewGame();
+		}
+
 		TimeSubsystem->StartTime();
 	}
 }
